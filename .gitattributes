@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Register Passkey</title>
+</head>
+<body>
+<h2>Register Passkey</h2>
+<button id="registerBtn">Register</button>
+
+<script>
+async function bufferToBase64(buf) {
+    return btoa(String.fromCharCode(...new Uint8Array(buf)));
+}
+
+async function base64ToBuffer(base64) {
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes.buffer;
+}
+
+document.getElementById('registerBtn').addEventListener('click', async () => {
+    try {
+        // Step 1: Get options from server
+        const resp = await fetch('passkey/register_start.php');
+        const options = await resp.json();
+
+        // Convert challenge & user.id to ArrayBuffer
+        options.challenge = await base64ToBuffer(options.challenge);
+        options.user.id = await base64ToBuffer(options.user.id);
+
+        // Step 2: Create credentials
+        const cred = await navigator.credentials.create({ publicKey: options });
+
+        // Convert ArrayBuffer fields to Base64 before sending to server
+        const data = {
+            id: cred.id,
+            rawId: await bufferToBase64(cred.rawId),
+            type: cred.type,
+            response: {
+                clientDataJSON: await bufferToBase64(cred.response.clientDataJSON),
+                attestationObject: await bufferToBase64(cred.response.attestationObject)
+            }
+        };
+
+        // Step 3: Send to server
+        const result = await fetch('passkey/register_finish.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        }).then(r => r.json());
+
+        alert(result.message || result.error);
+    } catch (err) {
+        console.error(err);
+        alert('Registration failed');
+    }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+    "require": {
+        "phpmailer/phpmailer": "^6.10",
+        "google/apiclient": "2.0",
+        "web-auth/webauthn-lib": "^5.2",
+        "web-auth/cose-lib": "4.4",
+        "nyholm/psr7": "^1.8",
+        "nyholm/psr7-server": "^1.1",
+        "facebook/graph-sdk": "^5.1"
+    }
+}
